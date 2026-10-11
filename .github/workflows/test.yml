@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  install:
+    strategy:
+      matrix:
+        runner: [windows-latest, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Install Scoop
+        shell: pwsh
+        run: |
+          Invoke-RestMethod get.scoop.sh -OutFile install.ps1
+          .\install.ps1 -RunAsAdmin
+          Join-Path (Resolve-Path ~).Path "scoop\shims" >> $env:GITHUB_PATH
+      - name: Install mudroom from this bucket
+        shell: pwsh
+        run: |
+          scoop bucket add kernel-hunter "https://github.com/${{ github.repository }}"
+          scoop install kernel-hunter/mudroom
+      - name: Run it
+        shell: pwsh
+        run: |
+          mudroom --version
+          mudroom --help | Select-Object -First 5
